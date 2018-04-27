@@ -1,0 +1,14 @@
+---
+- fail: msg="Cannot run without STAGE parameter"
+  when: stage is not defined
+
+- fail: msg="Cannot run without BASE parameter"
+  when: base is not defined
+
+- name: "Remove resource group for {{ deploy_env }}:{{ base }}"
+  become: yes
+  become_user: "{{ azure_username }}"
+  shell: azure group delete -q "{{ item }}"
+  with_items: group_list_all.stdout_lines
+  when: base == "all"
+

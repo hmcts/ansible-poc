@@ -1,0 +1,7 @@
+# Configure the Azure Resource Manager Provider
+provider "azurerm" {
+  subscription_id = "{{ azure_subscription_id }}"
+  client_id       = "{{ azure_client_id }}"
+  client_secret   = "{{ azure_client_secret }}"
+  tenant_id       = "{{ azure_tenant_id }}"
+}

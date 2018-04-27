@@ -1,0 +1,8 @@
+data "terraform_remote_state" "base" {
+  backend = "consul"
+
+  config {
+    path    = "terraform/state/base"
+    address = "{{ consul_host }}:{{ consul_port }}"
+  }
+}

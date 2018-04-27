@@ -1,0 +1,59 @@
+# Default 'facts'
+
+data_volume: /data
+domain: "example.net"
+azure_subscription: example-azure-sub
+azure_environment: DemoA
+azure_username: exampleUsername
+azure_ssh_username: exampleJUser
+azure_ssh_password: "{{ vaulted_azure_ssh_password }}"
+
+# Use quotes for "fractions" else 'os_version: 6.8' becomes 'os_version': 6.7999999999999998
+# Set 'vm_count' to 0 to skip
+server_defaults: &server_defaults
+    os_type: CentOS
+    os_version: "7.3"
+    azure_type: Standard_D2_v2
+    vm_count: 2
+    vlan: private
+    subdomain: demoA
+    location: UK South
+    publisher: openlogic
+    public: false
+
+azure_hosts:
+  - web:
+    <<: *server_defaults
+    name: web
+    roles: "frontend"
+  - app:
+    name: app
+    <<: *server_defaults
+    roles: "backend"
+  - data:
+    name: data
+    <<: *server_defaults
+    roles: "data"
+  - cache:
+    name: cache
+    <<: *server_defaults
+    roles: "redis"
+    vm_count: 1
+
+reference_release: rc1
+
+web_probate_default: &web_probate_default
+  type: application
+  version: "{{ releases[reference_release]['web_probate'] }}"
+  cfg_name: web
+app_core_default: &app_core_default
+  type: application
+  version: "{{ releases[reference_release]['app_core'] }}"
+  cfg_name: app
+
+web_applications:
+  - { app_name: probate-frontend,  <<: *web_probate_default }
+  - { app_name: probate-webadmin,  <<: *web_probate_default }
+  - { app_name: core-users,        <<: *app_core_default    }
+  - { app_name: core-notification, <<: *app_core_default    }
+

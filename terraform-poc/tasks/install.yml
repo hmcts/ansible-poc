@@ -1,0 +1,76 @@
+---
+- name: Create Terraform group
+  group:
+    name: "{{ terraform_user }}"
+    state: present
+
+- name: Create Terraform user
+  user:
+    name: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    state: present
+
+- name: create ssh directories for terraform
+  become: yes
+  file:
+    path: "/home/{{ terraform_user }}/.ssh"
+    state: directory
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0700
+
+- name: Set up authorized_keys for terraform
+  become: yes
+  copy:
+    content: "{{ vaulted_terraform_ssh_pub }}"
+    dest: "/home/{{ terraform_user }}/.ssh/authorized_keys"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0600
+
+- name: Set up authorized_keys for terraform
+  become: yes
+  copy:
+    content: "{{ terraform_ssh_key }}"
+    dest: "/home/{{ terraform_user }}/.ssh/id_rsa"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0600
+
+- name: Create Terraform application directory
+  file:
+    path: "{{ terraform_install_dir }}/terraform-{{ terraform_version }}"
+    state: directory
+
+- name: Check for existing Terraform binary
+  stat:
+    path: "{{ terraform_install_dir }}/terraform/terraform"
+  register: terraform
+
+- name: Download Terraform
+  unarchive:
+    src: "https://yum.reference.example.net/repositories/devops/com/hashicorp/terraform/{{ terraform_version }}/terraform_{{ terraform_file }}.zip"
+    dest: "{{ terraform_install_dir }}/terraform-{{ terraform_version }}"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    copy: no
+  register: terraform_download
+  when: not terraform.stat.exists
+
+- name: Add Terraform directory symlink
+  file:
+    src: "{{ terraform_install_dir }}/terraform-{{ terraform_version }}"
+    dest: "{{ terraform_install_dir }}/terraform"
+    state: link
+  when: terraform_download.changed
+
+- name: Add /usr/local/bin/terraform symlink
+  file:
+    src: "{{ terraform_install_dir }}/terraform/terraform"
+    dest: "/usr/local/bin/terraform"
+    state: link
+
+- name: Create Terraform conf.d directory
+  file:
+    path: "/etc/terraform.d"
+    state: directory

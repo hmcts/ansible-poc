@@ -1,0 +1,118 @@
+variable "authorized_keys" {
+  type        = "string"
+  description = "Path to a local SSH authorized_keys file to be added to the hosts created"
+}
+
+variable "publicIp" {
+  type = "string"
+}
+
+variable "hostNetworkInterface" {
+  type = "string"
+}
+
+variable "hostNetworkInterfaceConfiguration" {
+  type = "string"
+}
+
+variable "hostOsDisk" {
+  type = "string"
+}
+
+variable "location" {
+  type = "string"
+}
+
+variable "publisher" {
+  type = "string"
+}
+
+variable "os_offer" {
+  type = "string"
+}
+
+variable "os_sku" {
+  type = "string"
+}
+
+variable "resourceGroupName" {
+  type = "string"
+}
+
+variable "hostName" {
+  type = "string"
+}
+
+variable "vmSize" {
+  type = "string"
+}
+
+variable "publicDnsARecord" {
+  type        = "string"
+  description = "DNS A record in var.referenceDnsZone to point to the public IP of this VM"
+}
+
+variable "referenceServicesSubnetId" {
+  type = "string"
+}
+
+variable "referenceVmStorageAccountPrimary_blob_endpoint" {
+  type = "string"
+}
+
+variable "referenceVmStorageContainerName" {
+  type = "string"
+}
+
+variable "referenceDnsZone" {
+  type = "string"
+}
+
+variable "referenceInfraGroupName" {
+  type = "string"
+}
+
+variable "stage_tag" {
+  type = "string"
+}
+
+variable "type_tag" {
+  type = "string"
+}
+
+variable "set_tag" {
+  type = "string"
+}
+
+variable "role_drupal-db" {
+  type = "string"
+}
+
+variable "role_drupal-web" {
+  type = "string"
+}
+
+variable "role_varnish" {
+  type = "string"
+}
+
+variable "role_esb" {
+  type = "string"
+}
+
+variable "role_mongodb" {
+  type = "string"
+}
+
+variable "role_esb_queue" {
+  type = "string"
+}
+
+variable "role_sso" {
+  type = "string"
+}
+
+variable "role_opendj" {
+  type = "string"
+}
+

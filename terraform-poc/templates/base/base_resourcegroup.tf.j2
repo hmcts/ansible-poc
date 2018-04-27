@@ -1,0 +1,10 @@
+resource "azurerm_resource_group" "referenceGroup" {
+  name     = "referenceGroup"
+  location = "UK South"
+
+  tags {
+    owner = "devops"
+	role = "dns"
+	type = "infra"
+  }
+}

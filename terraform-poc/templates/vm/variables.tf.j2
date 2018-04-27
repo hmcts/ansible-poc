@@ -1,0 +1,7 @@
+variable "authorized_keys" {
+    default = "/home/{{ terraform_user }}/.ssh/authorized_keys"
+}
+
+variable "hostname_id" {
+    default = "{{ az_hostname }}"
+}

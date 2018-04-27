@@ -1,0 +1,10 @@
+resource "azurerm_resource_group" "referenceDNS{{ stage }}" {
+   name = "referenceNameInfraGroup"
+   location = "{{ location }}"
+}
+
+resource "azurerm_dns_zone" "referenceDNS{{ stage }}" {
+   name = "example.net"
+   resource_group_name = "${azurerm_resource_group.referenceDNS{{ stage }}.name}"
+}
+

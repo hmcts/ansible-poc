@@ -1,0 +1,44 @@
+---
+- name: Increment hostname to avoid clashes
+  set_fact:
+    host_increment: "{{ host_increment | int + 1 }}"
+    az_hostname: "{{ hostname }}{{ host_increment }}"
+    hostname_base: "{{ o_item.name }}"
+
+- name: "Create directories for {{ stage }}:{{ az_hostname }}"
+  file:
+    path: "{{ terraform_data_dir }}/{{ stage }}/{{ az_hostname }}"
+    state: directory
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0755
+
+- name: "Copy Terraform Azure templates for {{ stage }}:{{ az_hostname }}"
+  template:
+    src: "vm/{{ item }}.tf.j2"
+    dest: "{{ terraform_data_dir }}/{{ stage }}/{{ az_hostname }}/{{ item }}.tf"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0644
+  with_items:
+    - vm
+    - resourcegroups
+    - variables
+    - remote_state
+
+- name: Add symlink for Terraform Azure provider template
+  file:
+    src: "/etc/terraform.d/provider.tf"
+    dest: "{{ terraform_data_dir }}/{{ stage }}/{{ az_hostname }}/provider.tf"
+    state: link
+
+- name: Prep Terraform environment
+  command: /usr/local/bin/terraform get
+  args:
+    chdir: "{{ terraform_data_dir }}/{{ stage }}/{{ az_hostname }}"
+
+- name: "Apply Terraform plan for {{ stage }}:{{ az_hostname }}"
+  shell: cd "{{ terraform_data_dir }}/{{ stage }}/{{ az_hostname }}" && CONSUL_HTTP_TOKEN='{{ terraform_consul_token }}' /usr/local/bin/terraform apply -no-color
+  args:
+    executable: /bin/bash
+  register: result

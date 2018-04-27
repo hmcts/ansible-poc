@@ -1,0 +1,46 @@
+module "{{ stage }}{{ hostname_base }}Host" {
+{% if public == true %}
+  source                                      = "../../modules/vmPublicHTTP"
+  publicIp                                    = "{{ stage }}{{ az_hostname }}PublicIp"
+  publicDnsARecord                            = "{{ az_hostname }}.{{ subdomain }}"
+{% else %}
+  source                                      = "../../modules/vmPrivate"
+{% endif %}
+  authorized_keys                             = "${var.authorized_keys}"
+  resourceGroupName                           = "referenceGroup"
+  hostName                                    = "${var.hostname_id}"
+  vmSize                                      = "{{ az_type }}"
+  availability_set_id                         = "${azurerm_availability_set.referenceGroup.id}"
+  hostNetworkInterface                        = "{{ stage }}{{ az_hostname }}NetworkInterface"
+  hostNetworkInterfaceConfiguration           = "{{ stage }}{{ az_hostname }}NetworkInterfaceConfiguration"
+  hostOsDisk                                  = "{{ stage }}{{ az_hostname }}OsDisk"
+  location                                    = "{{ location }}"
+  publisher                                   = "{{ publisher }}"
+  os_offer                                    = "{{ os_type }}"
+  os_sku                                      = "{{ os_version }}"
+  referenceServicesSubnetId                      = "${data.terraform_remote_state.base.referenceServicesSubnetId}"
+  referenceVmStorageAccountPrimary_blob_endpoint = "${data.terraform_remote_state.base.referenceVmStorageAccountPrimary_blob_endpoint}"
+  referenceVmStorageContainerName                = "${data.terraform_remote_state.base.referenceVmStorageContainerName}"
+  referenceDnsZone                               = "${data.terraform_remote_state.base.referenceDnsZone}"
+  referenceGroupName                             = "${data.terraform_remote_state.base.referenceGroupName}"
+  stage_tag                                   = "{{ stage }}"
+  type_tag                                    = "{{ hostname_base }}"
+  set_tag                                     = "reference"
+  role_drupal-db                              = "{{ role_drupal_db }}"
+  role_drupal-web                             = "{{ role_drupal_web }}"
+  role_varnish                                = "{{ role_varnish }}"
+  role_esb                                    = "{{ role_esb }}"
+  role_mongodb                                = "{{ role_mongodb }}"
+  role_esb_queue                              = "{{ role_esb_queue }}"
+  role_sso                                    = "{{ role_sso }}"
+  role_opendj                                 = "{{ role_opendj }}"
+}
+
+output "{{ stage }}{{ hostname_base }}Ip" {
+  value = "${module.{{ stage }}{{ hostname_base }}Host.ip}"
+}
+
+// output "{{ stage }}{{ hostname_base }}ConnectString" {
+//   value = "ssh -A -t zeus@${data.terraform_remote_state.base.bastionHostPublicIp} ssh ${module.{{ stage }}{{ hostname_base }}Host.ip}"
+// }
+

@@ -1,0 +1,19 @@
+---
+- name: Set some useful facts about the VM
+  set_fact:
+    o_item: "{{ item }}"
+    hostname: "{{ item.name }}{{ ansible_date_time.epoch }}{{ 99 | random(start=10) }}"
+    host_type: "{{ item.name }}"
+    az_type: "{{ item.azure_type }}"
+    os_type: "{{ item.os_type }}"
+    os_version: "{{ item.os_version }}"
+    vlan: "{{ item.vlan }}"
+    location: "{{ item.location }}"
+    subdomain: "{{ item.subdomain }}"
+    publisher: "{{ item.publisher }}"
+    public: "{{ item.public | default(false) }}"
+
+- name: Create Azure structure
+  include: create_az_structure.yml
+  with_sequence: count="{{ o_item.vm_count }}"
+

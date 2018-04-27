@@ -1,0 +1,84 @@
+resource "azurerm_public_ip" "bastionHostPublicIp" {
+  name                         = "bastionHostPublicIp"
+  location                     = "UK South"
+  resource_group_name          = "${azurerm_resource_group.referenceGroup.name}"
+  public_ip_address_allocation = "static"
+
+  tags {
+    owner = "devops"
+  }
+}
+
+resource "azurerm_network_interface" "bastionHostNetworkInterface" {
+  name                = "bastionHostNetworkInterface"
+  location            = "UK South"
+  resource_group_name = "${azurerm_resource_group.referenceGroup.name}"
+
+  ip_configuration {
+    name                          = "bastionHostNetworkInterfaceConfiguration1"
+    subnet_id                     = "${azurerm_subnet.referenceBastionSubnet.id}"
+    private_ip_address_allocation = "dynamic"
+    public_ip_address_id          = "${azurerm_public_ip.bastionHostPublicIp.id}"
+  }
+
+  tags {
+    owner = "devops"
+  }
+}
+
+resource "azurerm_virtual_machine" "bastionHost" {
+  name                  = "bastionHost"
+  location              = "UK South"
+  resource_group_name   = "${azurerm_resource_group.referenceGroup.name}"
+  network_interface_ids = ["${azurerm_network_interface.bastionHostNetworkInterface.id}"]
+  vm_size               = "Standard_A0"
+
+  tags {
+    owner = "devops"
+    stage = "all"
+    type = "bastion"
+    tag_set = "core"
+  }
+
+  storage_image_reference {
+    publisher = "openlogic"
+    offer     = "CentOS"
+    sku       = "6.8"
+    version   = "latest"
+  }
+
+  storage_os_disk {
+    name          = "bastionHostOsDisk"
+    vhd_uri       = "${azurerm_storage_account.referenceVmStorageAccount.primary_blob_endpoint}${azurerm_storage_container.referenceVmStorageContainer.name}/bastionHostOsDisk.vhd"
+    caching       = "ReadWrite"
+    create_option = "FromImage"
+  }
+
+  os_profile {
+    computer_name  = "bastion"
+    admin_username = "zeus"
+    admin_password = "SUPERRANDOMEXAMPLESTRINGREPLACEWITHYOUROWN"
+  }
+
+  os_profile_linux_config {
+    disable_password_authentication = true
+
+    ssh_keys {
+      path     = "/home/zeus/.ssh/authorized_keys"
+      key_data = "${file("${var.authorized_keys}")}"
+    }
+  }
+
+  tags {
+    owner = "devops"
+  }
+}
+
+resource "azurerm_dns_a_record" "bastionDnsARecord" {
+  name                = "bastion"
+  zone_name           = "${azurerm_dns_zone.reference_example.net.name}"
+  resource_group_name = "${azurerm_resource_group.referenceDNSGroup.name}"
+  ttl                 = "300"
+  records             = ["${azurerm_network_interface.bastionHostNetworkInterface.private_ip_address}"]
+}
+

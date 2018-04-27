@@ -1,0 +1,43 @@
+---
+- fail: msg="Cannot run without STAGE parameter"
+  when: stage is not defined
+
+- fail: msg="Cannot run without BASE parameter"
+  when: base is not defined
+
+# Doing this twice because ansible rewrites last output to our variable
+- name: "List resource group for {{ stage }}"
+  become: yes
+  become_user: "{{ terraform_user }}"
+  shell: >-
+    azure group list --json | jq .[].name | grep -w "reference{{ stage }}.*ResourceGroup" |
+    egrep -v "referenceGroup|reference" | sed -e 's/"//g'
+  args:
+    executable: /bin/bash
+  register: group_list_all
+  when: base == "all"
+
+- name: "List resource group for {{ stage }}:{{ base }}"
+  become: yes
+  become_user: "{{ terraform_user }}"
+  shell: >-
+    azure group list --json | jq .[].name | grep -w "reference{{ stage }}{{ base }}ResourceGroup" |
+    egrep -v "referenceGroup|reference" | sed -e 's/"//g'
+  args:
+    executable: /bin/bash
+  register: group_list_base
+  when: base != "all"
+
+- name: "Remove resource group for {{ stage }}:{{ base }}"
+  become: yes
+  become_user: "{{ terraform_user }}"
+  shell: azure group delete -q "{{ item }}"
+  with_items: group_list_all.stdout_lines
+  when: base == "all"
+
+- name: "Remove resource group for {{ stage }}"
+  become: yes
+  become_user: "{{ terraform_user }}"
+  shell: azure group delete -q "{{ item }}"
+  with_items: group_list_base.stdout_lines
+  when: base != "all"

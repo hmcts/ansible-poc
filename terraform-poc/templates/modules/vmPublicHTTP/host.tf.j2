@@ -1,0 +1,95 @@
+resource "azurerm_public_ip" "publicIp" {
+  name                         = "${var.publicIp}"
+  location                     = "${var.location}"
+  resource_group_name          = "${azurerm_resource_group.resourceGroup.name}"
+  public_ip_address_allocation = "static"
+
+  tags {
+    owner = "devops"
+  }
+}
+
+resource "azurerm_network_interface" "hostNetworkInterface" {
+  name                = "${var.hostNetworkInterface}"
+  location            = "${var.location}"
+  resource_group_name = "${azurerm_resource_group.resourceGroup.name}"
+
+  ip_configuration {
+    name                          = "${var.hostNetworkInterfaceConfiguration}"
+    subnet_id                     = "${var.referenceServicesSubnetId}"
+    private_ip_address_allocation = "dynamic"
+    public_ip_address_id          = "${azurerm_public_ip.publicIp.id}"
+  }
+
+  tags {
+    owner = "devops"
+  }
+}
+
+resource "azurerm_virtual_machine" "host" {
+  name                  = "${var.hostName}"
+  location              = "${var.location}"
+  resource_group_name   = "${azurerm_resource_group.resourceGroup.name}"
+  network_interface_ids = ["${azurerm_network_interface.hostNetworkInterface.id}"]
+  vm_size               = "${var.vmSize}"
+
+  storage_image_reference {
+    publisher = "${var.publisher}"
+    offer     = "${var.os_offer}"
+    sku       = "${var.os_sku}"
+    version   = "latest"
+  }
+
+  storage_os_disk {
+    name          = "${var.hostOsDisk}"
+    vhd_uri       = "${var.referenceVmStorageAccountPrimary_blob_endpoint}${var.referenceVmStorageContainerName}/${var.hostName}OsDisk.vhd"
+    caching       = "ReadWrite"
+    create_option = "FromImage"
+  }
+
+  os_profile {
+    computer_name  = "${var.hostName}"
+    admin_username = "{{ azure_ssh_username }}"
+    admin_password = "{{ azure_ssh_username_password }}"
+  }
+
+  os_profile_linux_config {
+    disable_password_authentication = true
+
+    ssh_keys {
+      path     = "/home/{{ azure_ssh_username }}/.ssh/authorized_keys"
+      key_data = "${file("${var.authorized_keys}")}"
+    }
+  }
+
+  tags {
+    owner   = "devops"
+    type    = "${var.type_tag}"
+    stage   = "${var.stage_tag}"
+    tag_set = "${var.set_tag}"
+    role_drupal-db   = "${var.role_drupal-db}"
+    role_drupal-web  = "${var.role_drupal-web}"
+    role_varnish     = "${var.role_varnish}"
+    role_esb         = "${var.role_esb}"
+    role_mongodb     = "${var.role_mongodb}"
+    role_esb_queue   = "${var.role_esb_queue}"
+    role_sso         = "${var.role_sso}"
+    role_opendj      = "${var.role_opendj}"
+  }
+}
+
+resource "azurerm_dns_a_record" "dnsARecord" {
+  name                = "${var.hostName}"
+  zone_name           = "${var.referenceDnsZone}"
+  resource_group_name = "${var.referenceInfraGroupName}"
+  ttl                 = "300"
+  records             = ["${azurerm_network_interface.hostNetworkInterface.private_ip_address}"]
+}
+
+resource "azurerm_dns_a_record" "publicDnsARecord" {
+  name                = "${var.publicDnsARecord}"
+  zone_name           = "${var.referenceDnsZone}"
+  resource_group_name = "${var.referenceInfraGroupName}"
+  ttl                 = "300"
+  records             = ["${azurerm_public_ip.publicIp.ip_address}"]
+}

@@ -1,0 +1,44 @@
+---
+- name: Set some useful facts about DNS
+  set_fact:
+    site_instance: "{{ item.key }}"
+    site_domain: "{{ item.value.site_domain | default(item.key ~ '.' ~ domain) }}"
+
+- name: Set the public IP
+  set_fact:
+    public_ip: "{{ cms_ip['ip'] }}"
+
+- name: Create DNS directory
+  file:
+    path: "{{ terraform_data_dir }}/{{ stage }}/dns"
+    state: directory
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+
+- name: "Copy base DNS templates"
+  template:
+    src: "dns/{{ item }}.tf.j2"
+    dest: "{{ terraform_data_dir }}/{{ stage }}/dns/{{ item }}.tf"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0644
+  with_items:
+    - remote_state
+    - resourcegroups
+
+- name: "Copy DNS templates for {{ site_domain }}"
+  template:
+    src: "dns/records.tf.j2"
+    dest: "{{ terraform_data_dir }}/{{ stage }}/dns/{{ item }}.{{ site_domain }}.tf"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0644
+  with_items:
+    - www
+
+- name: Add symlink for terraform azure provider template
+  file:
+    src: "/etc/terraform.d/provider.tf"
+    dest: "{{ terraform_data_dir }}/{{ stage }}/dns/provider.tf"
+    state: link
+

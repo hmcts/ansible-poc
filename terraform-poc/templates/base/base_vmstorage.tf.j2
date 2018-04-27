@@ -1,0 +1,17 @@
+resource "azurerm_storage_account" "referenceVmStorageAccount" {
+  name                = "referencevmstorage"
+  resource_group_name = "${azurerm_resource_group.referenceGroup.name}"
+  location            = "UK South"
+  account_type        = "Standard_LRS"
+
+  tags {
+    owner = "devops"
+  }
+}
+
+resource "azurerm_storage_container" "referenceVmStorageContainer" {
+  name                  = "vhds"
+  resource_group_name   = "${azurerm_resource_group.referenceGroup.name}"
+  storage_account_name  = "${azurerm_storage_account.referenceVmStorageAccount.name}"
+  container_access_type = "private"
+}

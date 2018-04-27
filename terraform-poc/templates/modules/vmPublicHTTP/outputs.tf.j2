@@ -1,0 +1,7 @@
+output "ip" {
+  value = "${azurerm_network_interface.hostNetworkInterface.private_ip_address}"
+}
+
+output "publicIp" {
+  value = "${azurerm_public_ip.publicIp.ip_address}"
+}

@@ -1,0 +1,120 @@
+# Create a virtual network
+resource "azurerm_virtual_network" "RefNET" {
+  name                = "RefNET"
+  address_space       = ["192.168.0.222/24"]
+  location            = "UK South"
+  resource_group_name = "${azurerm_resource_group.referenceGroup.name}"
+
+  tags {
+    owner = "devops"
+  }
+}
+
+resource "azurerm_subnet" "RefBastionSubnet" {
+  name                      = "RefBastionSubnet"
+  resource_group_name       = "${azurerm_resource_group.referenceGroup.name}"
+  virtual_network_name      = "${azurerm_virtual_network.RefNET.name}"
+  address_prefix            = "192.168.0.222/24"
+  network_security_group_id = "${azurerm_network_security_group.RefSubnetSecurityGroup.id}"
+}
+
+resource "azurerm_subnet" "ReferenceServicesSubnet" {
+  name                      = "ReferenceServicesSubnet"
+  resource_group_name       = "${azurerm_resource_group.referenceGroup.name}"
+  virtual_network_name      = "${azurerm_virtual_network.RefNet.name}"
+  address_prefix            = "192.168.0.221/24"
+  network_security_group_id = "${azurerm_network_security_group.ReferenceSubnetSecurityGroup.id}"
+}
+
+resource "azurerm_network_security_group" "RefSubnetSecurityGroup" {
+  name                = "RefBastionSubnetSecurityGroup"
+  location            = "UK South"
+  resource_group_name = "${azurerm_resource_group.referenceGroup.name}"
+
+  security_rule {
+    name                       = "sshInboundRFM1"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = 22
+    source_address_prefix      = "888.88.888.88/32"
+    destination_address_prefix = "*"
+  }
+
+  tags {
+    owner = "devops"
+  }
+}
+
+resource "azurerm_network_security_group" "ReferenceSubnetSecurityGroup" {
+  name                = "ReferenceSubnetSecurityGroup"
+  location            = "UK South"
+  resource_group_name = "${azurerm_resource_group.referenceGroup.name}"
+
+  security_rule {
+    name                       = "sshFromBastionSubnet"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = 22
+    source_address_prefix      = "888.888.888.88/24"
+    destination_address_prefix = "888.888.888.88/24"
+  }
+
+  security_rule {
+    name                       = "httpInboundRFM1"
+    priority                   = 200
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = 80
+    source_address_prefix      = "888.888.888.888/32"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "intraBastionSubnetAll"
+    priority                   = 1000
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "888.888.888.888/32"
+    destination_address_prefix = "888.888.888.888/32"
+  }
+
+  security_rule {
+    name                       = "intraSubnetAll"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "888.888.888.888/24"
+    destination_address_prefix = "888.888.888.888/24"
+  }
+
+  security_rule {
+    name                       = "denyAll"
+    priority                   = 4000
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  tags {
+    owner = "devops"
+  }
+}
+

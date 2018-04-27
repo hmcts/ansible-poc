@@ -1,0 +1,18 @@
+---
+
+- name: Increment hostname to avoid clashes
+  set_fact:
+    host_increment: "{{ host_increment | int + 1 }}"
+    az_hostname: "{{ hostname }}{{ host_increment }}"
+    hostname_base: "{{ o_azure_hosts.name }}"
+
+#- name: "Build VM for {{ stage }}:{{ az_hostname }}"
+#  become: yes
+#  become_user: "{{ azure_username }}"
+#  shell: >-
+#    cd "{{ terraform_data_dir }}/bin" &&
+#    ./azure-script.sh -v "{{ location }}" "{{ stage }}" "{{ host_type }}" "{{ az_hostname }}"
+
+- name: "Add Internal DNS entry"
+  debug: msg="{{ location }} {{ deploy_env }} {{ host_type }} {{ az_hostname }}"
+

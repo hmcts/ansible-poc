@@ -1,0 +1,132 @@
+---
+- name: Install Terraform config file
+  template:
+    src: modules/provider.tf.j2
+    dest: /etc/terraform.d/provider.tf
+    mode: 0644
+  register: terraform_config
+
+- name: Scrape consul for terraform token
+  uri:
+    url: "http://{{ consul_host }}:{{ consul_port }}/v1/acl/list?token={{ azure_consul_token }}"
+    return_content: yes
+  register: consul_token
+
+- fail: msg="Consul doesn't have a valid token... something broke!"
+  when: "'terraform_remote_state' not in consul_token.content"
+
+- name: Create Terraform data directory
+  file:
+    path: "{{ terraform_data_dir }}"
+    state: directory
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+
+- name: Set up known hosts as workaround... for now...
+  become: yes
+  copy:
+    content: "{{ vaulted_terraform_known_hosts }}"
+    dest: "/home/{{ terraform_user }}/.ssh/known_hosts"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0600
+
+- name: Create modules directory
+  file:
+    path: "{{ terraform_data_dir }}/modules/{{ item }}"
+    state: directory
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+  with_items:
+    - vmPrivate
+    - vmPublicHTTP
+
+- name: Copy Private modules to base directory
+  template:
+    src: "modules/vmPrivate/{{ item }}.tf.j2"
+    dest: "{{ terraform_data_dir }}/modules/vmPrivate/{{ item }}.tf"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0644
+  with_items:
+    - host
+    - outputs
+    - resourcegroup
+    - variables
+
+- name: Copy Public modules to base directory
+  template:
+    src: "modules/vmPublicHTTP/{{ item }}.tf.j2"
+    dest: "{{ terraform_data_dir }}/modules/vmPublicHTTP/{{ item }}.tf"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0644
+  with_items:
+    - host
+    - outputs
+    - resourcegroup
+    - variables
+
+- name: "Create useful directories"
+  become: yes
+  file:
+    path: "{{ terraform_data_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0755
+  with_items:
+    - base
+    - bin
+
+- name: Copy Base template
+  template:
+    src: "base/base_{{ item }}.tf.j2"
+    dest: "{{ terraform_data_dir }}/base/{{ item }}.tf"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0644
+  with_items:
+    - bastionhost
+    - dnszone
+    - outputs
+    - network
+    - vmstorage
+    - resourcegroup
+    - remote_state
+    - variables
+
+- name: Add symlink for terraform azure provider template
+  file:
+    src: "/etc/terraform.d/provider.tf"
+    dest: "{{ terraform_data_dir }}/base/provider.tf"
+    state: link
+
+- name: Setup state between Consul and Terraform
+  become: yes
+  become_user: "{{ terraform_user }}"
+  shell: >-
+    cd "{{ terraform_data_dir }}/base" &&
+    CONSUL_HTTP_TOKEN='{{ terraform_consul_token }}' /usr/local/bin/terraform remote config
+    -backend=consul
+    -backend-config="address={{ consul_host }}:{{ consul_port }}"
+    -backend-config="path=terraform/state/base"
+  args:
+    executable: /bin/bash
+  register: result
+
+- name: Create bastion host
+  become: yes
+  become_user: "{{ terraform_user }}"
+  shell: >-
+    cd "{{ terraform_data_dir }}/base" &&
+    CONSUL_HTTP_TOKEN='{{ terraform_consul_token }}' /usr/local/bin/terraform apply
+  when: (bootstrap is defined and bootstrap == "true")
+
+- name: Copy dynamic inventory script
+  template:
+    src: "bin/azure_rm.py"
+    dest: "{{ terraform_data_dir }}/bin/azure_rm.py"
+    owner: "{{ terraform_user }}"
+    group: "{{ terraform_user }}"
+    mode: 0755

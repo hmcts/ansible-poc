@@ -1,0 +1,4 @@
+resource "azurerm_dns_zone" "reference_example.net" {
+  name                = "reference.example.net"
+  resource_group_name = "${azurerm_resource_group.referenceDNSGroup.name}"
+}

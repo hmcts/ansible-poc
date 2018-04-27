@@ -1,0 +1,23 @@
+---
+- name: Set some useful facts about the VM
+  set_fact:
+    o_azure_hosts: "{{ azure_hosts }}"
+    hostname: "{{ azure_hosts.name }}{{ ansible_date_time.epoch }}{{ 99 | random(start=10) }}"
+    host_type: "{{ azure_hosts.name }}"
+    az_type: "{{ azure_hosts.azure_type }}"
+    os_type: "{{ azure_hosts.os_type }}"
+    os_version: "{{ azure_hosts.os_version }}"
+    vlan: "{{ azure_hosts.vlan }}"
+    location: "{{ azure_hosts.location }}"
+    subdomain: "{{ azure_hosts.subdomain }}"
+    publisher: "{{ azure_hosts.publisher }}"
+    role_frontend: "{{ azure_hosts.role_frontend | default(false) }}"
+    role_backend: "{{ azure_hosts.role_backend | default(false) }}"
+    role_data: "{{ azure_hosts.role_data | default(false) }}"
+    role_redis: "{{ azure_hosts.role_redis | default(false) }}"
+    public: "{{ azure_hosts.public | default(false) }}"
+
+- name: Create Azure structure
+  include: create_az_structure.yml
+  with_sequence: count="{{ o_azure_hosts.vm_count }}"
+

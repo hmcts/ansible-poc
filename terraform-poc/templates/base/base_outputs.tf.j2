@@ -1,0 +1,27 @@
+output "referenceGroupName" {
+  value = "${azurerm_resource_group.referenceGroup.name}"
+}
+
+output "referenceDnsZone" {
+  value = "${azurerm_dns_zone.reference_example.net.name}"
+}
+
+output "bastionHostPublicIp" {
+  value = "${azurerm_public_ip.bastionHostPublicIp.ip_address}"
+}
+
+output "bastionConnectString" {
+  value = "ssh -A zeus@${azurerm_public_ip.bastionHostPublicIp.ip_address}"
+}
+
+output "ReferenceSubnetId" {
+  value = "${azurerm_subnet.referenceServicesSubnet.id}"
+}
+
+output "ReferenceAccountPrimary_blob_endpoint" {
+  value = "${azurerm_storage_account.referenceVmStorageAccount.primary_blob_endpoint}"
+}
+
+output "referenceVmStorageContainerName" {
+  value = "${azurerm_storage_container.referenceVmStorageContainer.name}"
+}

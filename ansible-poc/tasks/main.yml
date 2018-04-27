@@ -1,0 +1,17 @@
+---
+
+- name: Set basic variables
+  set_fact:
+    host_increment: "{{ ansible_date_time.epoch }}"
+
+- include: vm_loop.yml
+  with_items: "{{ azure_hosts }}"
+  become: yes
+  become_user: "{{ azure_username }}"
+  when: action is undefined
+  loop_control:
+    loop_var: azure_hosts
+
+- include: destroy.yml
+  when: (action is defined and action == "stop")
+

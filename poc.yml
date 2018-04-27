@@ -1,0 +1,10 @@
+---
+- name: azure
+  hosts: localhost
+
+  vars_files:
+    - "group_vars/{{ deploy_env }}"
+
+  roles:
+    - ansible-poc
+

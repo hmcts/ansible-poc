@@ -1,0 +1,8 @@
+resource "azurerm_dns_a_record" "{{ item }}{{ site_instance }}{{ stage }}" {
+   name = "{{ item }}.{{ site_instance }}.{{ stage }}"
+   zone_name = "${azurerm_dns_zone.referenceDNS{{ stage }}.name}"
+   resource_group_name = "${azurerm_resource_group.referenceDNS{{ stage }}.name}"
+   ttl = "300"
+   records = ["{{ public_ip }}"]
+}
+
